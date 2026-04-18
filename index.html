@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pregnancy Tracker</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ec4899">
+
+  <!-- iOS home screen app -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BabyTracker">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --pink-50: #fdf2f8;
+      --pink-100: #fce7f3;
+      --pink-200: #fbcfe8;
+      --pink-300: #f9a8d4;
+      --pink-400: #f472b6;
+      --pink-500: #ec4899;
+      --pink-600: #db2777;
+      --purple-50: #faf5ff;
+      --purple-100: #f3e8ff;
+      --purple-500: #a855f7;
+      --purple-600: #9333ea;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --white: #ffffff;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, var(--pink-50) 0%, var(--purple-50) 100%);
+      color: var(--gray-800);
+      min-height: 100vh;
+      min-height: 100dvh;
+      line-height: 1.6;
+      padding-bottom: env(safe-area-inset-bottom);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--pink-400) 0%, var(--purple-500) 100%);
+      color: var(--white);
+      padding: calc(1.5rem + env(safe-area-inset-top)) 2rem 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+    .header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .header p { font-size: 0.9rem; opacity: 0.9; margin-top: 0.25rem; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .setup-card, .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: var(--shadow-md); }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-title .icon { font-size: 1.3rem; }
+
+    .setup-card {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      border: 2px dashed var(--pink-200);
+      background: linear-gradient(135deg, var(--white) 0%, var(--pink-50) 100%);
+    }
+    .setup-card h2 {
+      font-size: 1.4rem;
+      color: var(--pink-600);
+      margin-bottom: 0.5rem;
+    }
+    .setup-card p { color: var(--gray-500); margin-bottom: 1.5rem; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="date"], input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: var(--gray-800);
+      background: var(--gray-50);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--pink-400);
+      box-shadow: 0 0 0 3px rgba(244,114,182,0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--pink-500) 0%, var(--purple-500) 100%);
+      color: var(--white);
+      box-shadow: var(--shadow);
+    }
+    .btn-primary:hover { box-shadow: var(--shadow-md); }
+    .btn-sm {
+      padding: 0.45rem 1rem;
+      font-size: 0.85rem;
+    }
+    .btn-outline {
+      background: var(--white);
+      color: var(--pink-600);
+      border: 1.5px solid var(--pink-300);
+    }
+    .btn-outline:hover { background: var(--pink-50); }
+    .btn-danger {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .stat-box {
+      text-align: center;
+      padding: 1.25rem 0.75rem;
+      background: linear-gradient(135deg, var(--pink-50) 0%, var(--purple-50) 100%);
+      border-radius: 10px;
+      border: 1px solid var(--pink-100);
+    }
+    .stat-box .emoji { font-size: 2rem; margin-bottom: 0.4rem; }
+    .stat-box .value { font-size: 1.5rem; font-weight: 700; color: var(--pink-600); }
+    .stat-box .label { font-size: 0.8rem; color: var(--gray-500); margin-top: 0.15rem; }
+
+    .progress-container {
+      margin: 1rem 0;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 14px;
+      background: var(--gray-100);
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 7px;
+      background: linear-gradient(90deg, var(--pink-400), var(--purple-500));
+      transition: width 0.6s ease;
+    }
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--gray-400);
+      margin-top: 0.35rem;
+    }
+    .trimester-badges {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .trimester-badge {
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: 1.5px solid var(--gray-200);
+      color: var(--gray-500);
+    }
+    .trimester-badge.active {
+      background: linear-gradient(135deg, var(--pink-500), var(--purple-500));
+      color: var(--white);
+      border-color: transparent;
+    }
+
+    .baby-info {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1rem;
+      background: var(--pink-50);
+      border-radius: 10px;
+      border: 1px solid var(--pink-100);
+    }
+    .baby-info .fruit { font-size: 3.5rem; }
+    .baby-info .details h3 { font-size: 1rem; color: var(--pink-600); }
+    .baby-info .details p { font-size: 0.85rem; color: var(--gray-600); margin-top: 0.25rem; }
+
+    .tips-list { list-style: none; }
+    .tips-list li {
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .tips-list li:last-child { border-bottom: none; }
+    .tips-list .tip-icon { flex-shrink: 0; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 0.75rem;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .log-table th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--gray-500);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 2px solid var(--gray-100);
+    }
+    .log-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--gray-100);
+      color: var(--gray-700);
+    }
+    .log-table tr:last-child td { border-bottom: none; }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-400);
+      font-size: 0.9rem;
+    }
+
+    .appointment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .appointment-item:last-child { border-bottom: none; }
+    .appointment-item .appt-info { flex: 1; }
+    .appointment-item .appt-date {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--pink-600);
+    }
+    .appointment-item .appt-desc {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+    }
+
+    .hidden { display: none !important; }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      background: var(--white);
+      padding: 0.35rem;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.6rem 0.75rem;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--pink-500), var(--purple-500));
+      color: var(--white);
+    }
+    .tab-btn:hover:not(.active) { background: var(--gray-50); }
+
+    .reset-link {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--gray-400);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .reset-link:hover { color: var(--gray-600); }
+
+    .note-input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+      background: var(--gray-50);
+      outline: none;
+    }
+    .note-input:focus {
+      border-color: var(--pink-400);
+      box-shadow: 0 0 0 3px rgba(244,114,182,0.15);
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 1rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .overview-grid { grid-template-columns: 1fr 1fr; }
+      .baby-info { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Pregnancy Tracker</h1>
+  <p>Your journey, week by week</p>
+</div>
+
+<div class="container">
+
+  <!-- Setup Screen -->
+  <div id="setupScreen" class="setup-card">
+    <h2>Welcome!</h2>
+    <p>Enter the first day of your last menstrual period to get started.</p>
+    <div style="max-width: 300px; margin: 0 auto; text-align: left;">
+      <label for="lmpDate">Last Menstrual Period (LMP)</label>
+      <input type="date" id="lmpDate">
+      <br><br>
+      <button class="btn btn-primary" style="width:100%" onclick="startTracking()">Start Tracking</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">Overview</button>
+      <button class="tab-btn" data-tab="development" onclick="switchTab('development', this)">Baby</button>
+      <button class="tab-btn" data-tab="weight" onclick="switchTab('weight', this)">Weight</button>
+      <button class="tab-btn" data-tab="appointments" onclick="switchTab('appointments', this)">Appointments</button>
+      <button class="tab-btn" data-tab="notes" onclick="switchTab('notes', this)">Notes</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="tab-overview" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="icon">📅</span> Pregnancy Overview</div>
+        <div class="overview-grid">
+          <div class="stat-box">
+            <div class="emoji">🤰</div>
+            <div class="value" id="currentWeek">--</div>
+            <div class="label">Week</div>
+          </div>
+          <div class="stat-box">
+            <div class="emoji">📆</div>
+            <div class="value" id="currentDay">--</div>
+            <div class="label">Day</div>
+          </div>
+          <div class="stat-box">
+            <div class="emoji">🎯</div>
+            <div class="value" id="dueDate">--</div>
+            <div class="label">Due Date</div>
+          </div>
+          <div class="stat-box">
+            <div class="emoji">⏳</div>
+            <div class="value" id="daysLeft">--</div>
+            <div class="label">Days Left</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">📊</span> Progress</div>
+        <div class="progress-container">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+          </div>
+          <div class="progress-labels">
+            <span>0 weeks</span>
+            <span>40 weeks</span>
+          </div>
+        </div>
+        <div class="trimester-badges">
+          <span class="trimester-badge" id="tri1">1st Trimester (1-12)</span>
+          <span class="trimester-badge" id="tri2">2nd Trimester (13-26)</span>
+          <span class="trimester-badge" id="tri3">3rd Trimester (27-40)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">💡</span> Tips for This Week</div>
+        <ul class="tips-list" id="weeklyTips"></ul>
+      </div>
+
+      <div style="text-align:center">
+        <span class="reset-link" onclick="resetApp()">Reset &amp; start over</span>
+      </div>
+    </div>
+
+    <!-- Baby Development Tab -->
+    <div id="tab-development" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title"><span class="icon">👶</span> Baby This Week</div>
+        <div class="baby-info" id="babyInfo">
+          <div class="fruit" id="babyFruit">🫘</div>
+          <div class="details">
+            <h3 id="babySizeTitle">--</h3>
+            <p id="babySizeDesc">--</p>
+            <p id="babyDevelopment">--</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">📋</span> Milestones Ahead</div>
+        <ul class="tips-list" id="milestoneList"></ul>
+      </div>
+    </div>
+
+    <!-- Weight Tab -->
+    <div id="tab-weight" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title"><span class="icon">⚖️</span> Weight Log</div>
+        <div class="form-row">
+          <div>
+            <label for="weightDate">Date</label>
+            <input type="date" id="weightDate">
+          </div>
+          <div>
+            <label for="weightValue">Weight (kg)</label>
+            <input type="number" id="weightValue" step="0.1" min="30" max="200" placeholder="e.g. 65.5">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addWeight()">Add</button>
+        </div>
+        <div id="weightTableContainer">
+          <table class="log-table" id="weightTable">
+            <thead><tr><th>Date</th><th>Weight (kg)</th><th>Change</th><th></th></tr></thead>
+            <tbody id="weightBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state hidden" id="weightEmpty">No weight entries yet. Start logging above.</div>
+      </div>
+    </div>
+
+    <!-- Appointments Tab -->
+    <div id="tab-appointments" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title"><span class="icon">🏥</span> Appointments</div>
+        <div class="form-row">
+          <div>
+            <label for="apptDate">Date</label>
+            <input type="date" id="apptDate">
+          </div>
+          <div>
+            <label for="apptDesc">Description</label>
+            <input type="text" id="apptDesc" placeholder="e.g. Ultrasound scan" maxlength="100">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addAppointment()">Add</button>
+        </div>
+        <div id="apptList"></div>
+        <div class="empty-state hidden" id="apptEmpty">No appointments scheduled.</div>
+      </div>
+    </div>
+
+    <!-- Notes Tab -->
+    <div id="tab-notes" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title"><span class="icon">📝</span> Journal / Notes</div>
+        <textarea class="note-input" id="notesArea" placeholder="How are you feeling today? Write anything you'd like to remember..."></textarea>
+        <br><br>
+        <button class="btn btn-primary btn-sm" onclick="saveNotes()">Save Notes</button>
+        <span id="notesSaved" style="margin-left:0.75rem; font-size:0.85rem; color:var(--gray-400)"></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const STORAGE_PREFIX = "pregtracker_";
+
+const babyData = [
+  null,
+  { fruit: "🌰", size: "Poppy seed", length: "~0.1 cm", desc: "Fertilized egg implants in uterus." },
+  { fruit: "🌰", size: "Poppy seed", length: "~0.1 cm", desc: "Embryo begins forming, cells divide rapidly." },
+  { fruit: "🌰", size: "Poppy seed", length: "~0.1 cm", desc: "Blastocyst implanting, placenta starts developing." },
+  { fruit: "🫐", size: "Poppy seed", length: "~0.2 cm", desc: "Neural tube forming; heart begins to beat." },
+  { fruit: "🍎", size: "Sesame seed", length: "~0.3 cm", desc: "Tiny arm and leg buds appear." },
+  { fruit: "🫛", size: "Lentil", length: "~0.6 cm", desc: "Nose, mouth, and ears forming." },
+  { fruit: "🫐", size: "Blueberry", length: "~1.3 cm", desc: "Arms and legs growing; brain developing rapidly." },
+  { fruit: "🫘", size: "Raspberry", length: "~1.6 cm", desc: "Fingers start to form; baby starts moving." },
+  { fruit: "🍇", size: "Grape", length: "~2.3 cm", desc: "All essential organs have begun forming." },
+  { fruit: "🫒", size: "Green olive", length: "~3 cm", desc: "Bones start to harden; tiny fingernails appear." },
+  { fruit: "🍓", size: "Strawberry", length: "~4 cm", desc: "Almost fully formed; can open and close fists." },
+  { fruit: "🍋", size: "Lime", length: "~5.5 cm", desc: "Reflexes developing; can suck thumb." },
+  { fruit: "🍑", size: "Peach", length: "~7 cm", desc: "Fingerprints forming; organs maturing." },
+  { fruit: "🍋", size: "Lemon", length: "~9 cm", desc: "Can make facial expressions; body growing faster." },
+  { fruit: "🍊", size: "Orange", length: "~10 cm", desc: "Can sense light; bones getting stronger." },
+  { fruit: "🥑", size: "Avocado", length: "~12 cm", desc: "Can hear sounds; eyebrows forming." },
+  { fruit: "🍐", size: "Pear", length: "~13 cm", desc: "Skeleton changing from cartilage to bone." },
+  { fruit: "🫑", size: "Bell pepper", length: "~14 cm", desc: "Baby can yawn and hiccup." },
+  { fruit: "🥭", size: "Mango", length: "~15 cm", desc: "Vernix (protective coating) covers skin." },
+  { fruit: "🍌", size: "Banana", length: "~16 cm", desc: "You may feel first kicks (quickening)!" },
+  { fruit: "🥕", size: "Carrot", length: "~27 cm", desc: "Eyebrows and eyelids fully formed." },
+  { fruit: "🌽", size: "Corn on the cob", length: "~28 cm", desc: "Sense of touch developing." },
+  { fruit: "🥭", size: "Large mango", length: "~29 cm", desc: "Can hear your voice clearly now." },
+  { fruit: "🌽", size: "Ear of corn", length: "~30 cm", desc: "Lungs developing branches; face fully formed." },
+  { fruit: "🫛", size: "Rutabaga", length: "~35 cm", desc: "Responds to sounds and light; gaining weight." },
+  { fruit: "🥬", size: "Lettuce head", length: "~36 cm", desc: "Eyes can open; lungs producing surfactant." },
+  { fruit: "🥦", size: "Cauliflower", length: "~37 cm", desc: "Can dream (REM sleep); brain growing fast." },
+  { fruit: "🍆", size: "Eggplant", length: "~38 cm", desc: "Can blink; body fat increasing." },
+  { fruit: "🎃", size: "Butternut squash", length: "~39 cm", desc: "Brain and lungs maturing rapidly." },
+  { fruit: "🥬", size: "Cabbage", length: "~40 cm", desc: "Strong grip reflex; bones fully developed." },
+  { fruit: "🥥", size: "Coconut", length: "~41 cm", desc: "Can turn head; all five senses active." },
+  { fruit: "🍈", size: "Honeydew melon", length: "~42 cm", desc: "Toenails and hair growing; practicing breathing." },
+  { fruit: "🍍", size: "Pineapple", length: "~44 cm", desc: "Immune system developing; bones hardening." },
+  { fruit: "🍈", size: "Cantaloupe", length: "~45 cm", desc: "Central nervous system maturing." },
+  { fruit: "🍈", size: "Honeydew", length: "~46 cm", desc: "Gaining about 200g per week; lungs nearly mature." },
+  { fruit: "🥬", size: "Romaine lettuce", length: "~47 cm", desc: "Skin smoothing out; building fat layers." },
+  { fruit: "🎃", size: "Winter melon", length: "~48 cm", desc: "Head may drop into pelvis (lightening)." },
+  { fruit: "🍉", size: "Mini watermelon", length: "~49 cm", desc: "Organs fully mature; baby is full-term!" },
+  { fruit: "🍉", size: "Small watermelon", length: "~50 cm", desc: "Fully developed; ready for birth!" },
+  { fruit: "🍉", size: "Watermelon", length: "~51 cm", desc: "Due date! Baby is ready to meet you!" },
+];
+
+const weeklyTips = {
+  1:  ["Take prenatal vitamins with folic acid", "Schedule a preconception checkup", "Start tracking your cycle"],
+  4:  ["Confirm pregnancy with a test", "Schedule your first prenatal visit", "Avoid alcohol, smoking, and raw fish"],
+  5:  ["Stay hydrated - aim for 8+ glasses of water", "Rest when you feel tired", "Eat small, frequent meals for nausea"],
+  8:  ["Your first ultrasound may be coming up", "Avoid heavy lifting", "Get plenty of sleep"],
+  12: ["Share the news if you'd like!", "Start pelvic floor exercises", "Consider prenatal yoga or light exercise"],
+  16: ["You may start feeling baby move soon", "Stay active with gentle exercise", "Eat iron-rich foods"],
+  20: ["Anatomy scan (mid-pregnancy ultrasound)", "Sleep on your side", "Start planning the nursery"],
+  24: ["Glucose screening test may be scheduled", "Monitor baby's kick patterns", "Start birthing class research"],
+  28: ["Third trimester begins!", "Count baby kicks daily", "Plan your hospital bag"],
+  32: ["Baby is getting into position", "Practice breathing techniques", "Finalize birth plan"],
+  36: ["Baby could arrive any time now", "Pack your hospital bag", "Know the signs of labor"],
+  38: ["Appointments may be weekly now", "Rest and conserve energy", "Keep your phone charged!"],
+  40: ["Due date is here! Stay calm and patient", "Walk to encourage labor", "Trust your body and your care team"],
+};
+
+const milestones = [
+  { week: 6, text: "First heartbeat detectable" },
+  { week: 8, text: "First prenatal visit" },
+  { week: 10, text: "All major organs formed" },
+  { week: 12, text: "End of first trimester" },
+  { week: 16, text: "Gender may be visible on ultrasound" },
+  { week: 20, text: "Anatomy scan / halfway point!" },
+  { week: 24, text: "Viability milestone" },
+  { week: 27, text: "Third trimester begins" },
+  { week: 28, text: "Baby can open eyes" },
+  { week: 32, text: "Baby practicing breathing" },
+  { week: 36, text: "Baby considered early term" },
+  { week: 37, text: "Full term!" },
+  { week: 40, text: "Due date" },
+];
+
+function load(key) {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function save(key, val) {
+  localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(val));
+}
+
+function startTracking() {
+  const lmpInput = document.getElementById("lmpDate");
+  if (!lmpInput.value) return;
+  const lmp = new Date(lmpInput.value + "T00:00:00");
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (lmp > today) return alert("Date cannot be in the future.");
+  const diffDays = Math.floor((today - lmp) / 86400000);
+  if (diffDays > 300) return alert("Date seems too far in the past. Please check.");
+  save("lmp", lmpInput.value);
+  renderDashboard();
+}
+
+function resetApp() {
+  if (!confirm("Reset all data? This cannot be undone.")) return;
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(STORAGE_PREFIX));
+  keys.forEach(k => localStorage.removeItem(k));
+  document.getElementById("setupScreen").classList.remove("hidden");
+  document.getElementById("dashboard").classList.add("hidden");
+}
+
+function renderDashboard() {
+  const lmpStr = load("lmp");
+  if (!lmpStr) return;
+
+  document.getElementById("setupScreen").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+
+  const lmp = new Date(lmpStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const totalDays = Math.floor((today - lmp) / 86400000);
+  const week = Math.min(Math.floor(totalDays / 7), 42);
+  const day = totalDays % 7;
+
+  const dueDate = new Date(lmp);
+  dueDate.setDate(dueDate.getDate() + 280);
+  const daysLeft = Math.max(0, Math.ceil((dueDate - today) / 86400000));
+
+  document.getElementById("currentWeek").textContent = week;
+  document.getElementById("currentDay").textContent = day;
+  document.getElementById("dueDate").textContent = formatDateShort(dueDate);
+  document.getElementById("daysLeft").textContent = daysLeft;
+
+  const pct = Math.min((totalDays / 280) * 100, 100);
+  document.getElementById("progressBar").style.width = pct.toFixed(1) + "%";
+
+  document.getElementById("tri1").classList.toggle("active", week >= 1 && week <= 12);
+  document.getElementById("tri2").classList.toggle("active", week >= 13 && week <= 26);
+  document.getElementById("tri3").classList.toggle("active", week >= 27);
+
+  renderBabyInfo(week);
+  renderTips(week);
+  renderMilestones(week);
+  renderWeightLog();
+  renderAppointments();
+  loadNotes();
+
+  const wd = document.getElementById("weightDate");
+  if (!wd.value) wd.value = formatISO(today);
+  const ad = document.getElementById("apptDate");
+  if (!ad.value) ad.value = formatISO(today);
+}
+
+function renderBabyInfo(week) {
+  const clamped = Math.min(Math.max(week, 1), 40);
+  const data = babyData[clamped] || babyData[1];
+  document.getElementById("babyFruit").textContent = data.fruit;
+  document.getElementById("babySizeTitle").textContent = `Week ${clamped}: About the size of a ${data.size}`;
+  document.getElementById("babySizeDesc").textContent = `Length: ${data.length}`;
+  document.getElementById("babyDevelopment").textContent = data.desc;
+}
+
+function renderTips(week) {
+  const container = document.getElementById("weeklyTips");
+  let tips = null;
+  const sorted = Object.keys(weeklyTips).map(Number).sort((a,b) => a - b);
+  for (const w of sorted) {
+    if (week >= w) tips = weeklyTips[w];
+  }
+  if (!tips) tips = weeklyTips[1];
+  container.innerHTML = tips.map(t =>
+    `<li><span class="tip-icon">✨</span>${escapeHtml(t)}</li>`
+  ).join("");
+}
+
+function renderMilestones(week) {
+  const container = document.getElementById("milestoneList");
+  const upcoming = milestones.filter(m => m.week >= week).slice(0, 5);
+  if (upcoming.length === 0) {
+    container.innerHTML = "<li><span class='tip-icon'>🎉</span>All milestones reached!</li>";
+    return;
+  }
+  container.innerHTML = upcoming.map(m => {
+    const icon = m.week === week ? "🔵" : "⚪";
+    return `<li><span class="tip-icon">${icon}</span><strong>Week ${m.week}</strong> &mdash; ${escapeHtml(m.text)}</li>`;
+  }).join("");
+}
+
+function addWeight() {
+  const dateEl = document.getElementById("weightDate");
+  const valEl = document.getElementById("weightValue");
+  if (!dateEl.value || !valEl.value) return;
+  const weights = load("weights") || [];
+  weights.push({ date: dateEl.value, value: parseFloat(valEl.value) });
+  weights.sort((a,b) => a.date.localeCompare(b.date));
+  save("weights", weights);
+  valEl.value = "";
+  renderWeightLog();
+}
+
+function removeWeight(idx) {
+  const weights = load("weights") || [];
+  weights.splice(idx, 1);
+  save("weights", weights);
+  renderWeightLog();
+}
+
+function renderWeightLog() {
+  const weights = load("weights") || [];
+  const tbody = document.getElementById("weightBody");
+  const empty = document.getElementById("weightEmpty");
+  const table = document.getElementById("weightTableContainer");
+
+  if (weights.length === 0) {
+    table.classList.add("hidden");
+    empty.classList.remove("hidden");
+    return;
+  }
+  table.classList.remove("hidden");
+  empty.classList.add("hidden");
+
+  tbody.innerHTML = weights.map((w, i) => {
+    const change = i > 0 ? (w.value - weights[i-1].value).toFixed(1) : "--";
+    const changeColor = i > 0 ? (w.value >= weights[i-1].value ? "var(--pink-600)" : "var(--gray-500)") : "";
+    return `<tr>
+      <td>${formatDateDisplay(w.date)}</td>
+      <td>${w.value.toFixed(1)}</td>
+      <td style="color:${changeColor}">${change !== "--" ? (change >= 0 ? "+" : "") + change : "--"}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeWeight(${i})">Remove</button></td>
+    </tr>`;
+  }).join("");
+}
+
+function addAppointment() {
+  const dateEl = document.getElementById("apptDate");
+  const descEl = document.getElementById("apptDesc");
+  if (!dateEl.value || !descEl.value.trim()) return;
+  const appts = load("appointments") || [];
+  appts.push({ date: dateEl.value, desc: descEl.value.trim() });
+  appts.sort((a,b) => a.date.localeCompare(b.date));
+  save("appointments", appts);
+  descEl.value = "";
+  renderAppointments();
+}
+
+function removeAppointment(idx) {
+  const appts = load("appointments") || [];
+  appts.splice(idx, 1);
+  save("appointments", appts);
+  renderAppointments();
+}
+
+function renderAppointments() {
+  const appts = load("appointments") || [];
+  const container = document.getElementById("apptList");
+  const empty = document.getElementById("apptEmpty");
+
+  if (appts.length === 0) {
+    container.innerHTML = "";
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+
+  container.innerHTML = appts.map((a, i) => `
+    <div class="appointment-item">
+      <div class="appt-info">
+        <div class="appt-date">${formatDateDisplay(a.date)}</div>
+        <div class="appt-desc">${escapeHtml(a.desc)}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeAppointment(${i})">Remove</button>
+    </div>
+  `).join("");
+}
+
+function saveNotes() {
+  const text = document.getElementById("notesArea").value;
+  save("notes", text);
+  document.getElementById("notesSaved").textContent = "Saved!";
+  setTimeout(() => document.getElementById("notesSaved").textContent = "", 2000);
+}
+
+function loadNotes() {
+  const notes = load("notes");
+  if (notes !== null) document.getElementById("notesArea").value = notes;
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.add("hidden"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + tabId).classList.remove("hidden");
+  btn.classList.add("active");
+}
+
+function formatDateShort(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+function formatDateDisplay(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+function formatISO(d) {
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+renderDashboard();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
