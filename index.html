@@ -365,11 +365,67 @@
       box-shadow: 0 0 0 3px rgba(244,114,182,0.15);
     }
 
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .compare-col {
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1.5px solid var(--gray-200);
+    }
+    .compare-col.lmp {
+      background: var(--pink-50);
+      border-color: var(--pink-200);
+    }
+    .compare-col.doctor {
+      background: var(--purple-50);
+      border-color: var(--purple-100);
+    }
+    .compare-col .col-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1.5px solid;
+    }
+    .compare-col.lmp .col-label { color: var(--pink-600); border-color: var(--pink-200); }
+    .compare-col.doctor .col-label { color: var(--purple-600); border-color: var(--purple-100); }
+    .compare-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0;
+      font-size: 0.88rem;
+    }
+    .compare-row .cr-label { color: var(--gray-500); }
+    .compare-row .cr-value { font-weight: 600; color: var(--gray-800); }
+    .diff-badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .diff-badge.match { background: #d1fae5; color: #059669; }
+    .diff-badge.offset { background: #fef3c7; color: #d97706; }
+    .doctor-setup-inline {
+      display: flex;
+      gap: 0.75rem;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+    .doctor-setup-inline > div { flex: 1; min-width: 180px; }
+
     @media (max-width: 600px) {
       .container { padding: 1rem; }
       .form-row { grid-template-columns: 1fr; }
       .overview-grid { grid-template-columns: 1fr 1fr; }
       .baby-info { flex-direction: column; text-align: center; }
+      .compare-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -390,6 +446,10 @@
       <label for="lmpDate">Last Menstrual Period (LMP)</label>
       <input type="date" id="lmpDate">
       <br><br>
+      <label for="ultrasoundDate">Doctor's / Ultrasound Date <span style="font-weight:400; color:var(--gray-400)">(optional)</span></label>
+      <input type="date" id="ultrasoundDate">
+      <p style="font-size:0.78rem; color:var(--gray-400); margin-top:0.25rem;">Adjusted due date or corrected LMP from your doctor's ultrasound</p>
+      <br>
       <button class="btn btn-primary" style="width:100%" onclick="startTracking()">Start Tracking</button>
     </div>
   </div>
@@ -399,6 +459,7 @@
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">Overview</button>
+      <button class="tab-btn" data-tab="doctor" onclick="switchTab('doctor', this)">Doctor's Date</button>
       <button class="tab-btn" data-tab="development" onclick="switchTab('development', this)">Baby</button>
       <button class="tab-btn" data-tab="weight" onclick="switchTab('weight', this)">Weight</button>
       <button class="tab-btn" data-tab="appointments" onclick="switchTab('appointments', this)">Appointments</button>
@@ -458,6 +519,105 @@
 
       <div style="text-align:center">
         <span class="reset-link" onclick="resetApp()">Reset &amp; start over</span>
+      </div>
+    </div>
+
+    <!-- Doctor's Date Tab -->
+    <div id="tab-doctor" class="tab-content hidden">
+      <div class="card">
+        <div class="card-title"><span class="icon">🩺</span> Doctor's / Ultrasound Date</div>
+        <p style="font-size:0.85rem; color:var(--gray-500); margin-bottom:1rem;">
+          Set the adjusted date your doctor provided based on ultrasound measurements. This is often different from the LMP calculation.
+        </p>
+        <div class="doctor-setup-inline">
+          <div>
+            <label for="doctorDateInput">Doctor's adjusted due date or corrected LMP</label>
+            <input type="date" id="doctorDateInput">
+          </div>
+          <div>
+            <label for="doctorDateType">This date is a</label>
+            <select id="doctorDateType">
+              <option value="edd">Due Date (EDD)</option>
+              <option value="lmp">Corrected LMP</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveDoctorDate()">Save</button>
+        </div>
+        <div id="doctorDateSaved" style="font-size:0.82rem; color:var(--gray-400); margin-top:0.5rem;"></div>
+      </div>
+
+      <div class="card hidden" id="doctorCompareCard">
+        <div class="card-title"><span class="icon">📊</span> Side-by-Side Comparison</div>
+        <div class="compare-grid">
+          <div class="compare-col lmp">
+            <div class="col-label">Your LMP Date</div>
+            <div class="compare-row"><span class="cr-label">Week</span><span class="cr-value" id="cmpLmpWeek">--</span></div>
+            <div class="compare-row"><span class="cr-label">Day</span><span class="cr-value" id="cmpLmpDay">--</span></div>
+            <div class="compare-row"><span class="cr-label">Due Date</span><span class="cr-value" id="cmpLmpDue">--</span></div>
+            <div class="compare-row"><span class="cr-label">Days Left</span><span class="cr-value" id="cmpLmpLeft">--</span></div>
+            <div class="compare-row"><span class="cr-label">Trimester</span><span class="cr-value" id="cmpLmpTri">--</span></div>
+          </div>
+          <div class="compare-col doctor">
+            <div class="col-label">Doctor's Date</div>
+            <div class="compare-row"><span class="cr-label">Week</span><span class="cr-value" id="cmpDocWeek">--</span></div>
+            <div class="compare-row"><span class="cr-label">Day</span><span class="cr-value" id="cmpDocDay">--</span></div>
+            <div class="compare-row"><span class="cr-label">Due Date</span><span class="cr-value" id="cmpDocDue">--</span></div>
+            <div class="compare-row"><span class="cr-label">Days Left</span><span class="cr-value" id="cmpDocLeft">--</span></div>
+            <div class="compare-row"><span class="cr-label">Trimester</span><span class="cr-value" id="cmpDocTri">--</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hidden" id="doctorDiffCard">
+        <div class="card-title"><span class="icon">🔍</span> Difference</div>
+        <div style="text-align:center; padding: 0.5rem 0;">
+          <span class="diff-badge" id="diffBadge">--</span>
+          <p style="font-size:0.82rem; color:var(--gray-400); margin-top:0.75rem;" id="diffExplanation"></p>
+        </div>
+      </div>
+
+      <div class="card hidden" id="doctorProgressCard">
+        <div class="card-title"><span class="icon">📈</span> Doctor's Progress</div>
+        <div class="overview-grid" style="margin-bottom:1rem;">
+          <div class="stat-box">
+            <div class="emoji">🩺</div>
+            <div class="value" id="docCurrentWeek">--</div>
+            <div class="label">Week (Doctor)</div>
+          </div>
+          <div class="stat-box">
+            <div class="emoji">📆</div>
+            <div class="value" id="docCurrentDay">--</div>
+            <div class="label">Day (Doctor)</div>
+          </div>
+          <div class="stat-box">
+            <div class="emoji">🎯</div>
+            <div class="value" id="docDueDate">--</div>
+            <div class="label">Due Date (Doctor)</div>
+          </div>
+          <div class="stat-box">
+            <div class="emoji">⏳</div>
+            <div class="value" id="docDaysLeft">--</div>
+            <div class="label">Days Left (Doctor)</div>
+          </div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="docProgressBar" style="width: 0%; background: linear-gradient(90deg, #a855f7, #7c3aed);"></div>
+          </div>
+          <div class="progress-labels">
+            <span>0 weeks</span>
+            <span>40 weeks</span>
+          </div>
+        </div>
+        <div class="trimester-badges">
+          <span class="trimester-badge" id="docTri1">1st Trimester (1-12)</span>
+          <span class="trimester-badge" id="docTri2">2nd Trimester (13-26)</span>
+          <span class="trimester-badge" id="docTri3">3rd Trimester (27-40)</span>
+        </div>
+      </div>
+
+      <div id="doctorEmpty" class="card">
+        <div class="empty-state">No doctor's date set yet. Add one above to see the comparison.</div>
       </div>
     </div>
 
@@ -639,6 +799,13 @@ function startTracking() {
   const diffDays = Math.floor((today - lmp) / 86400000);
   if (diffDays > 300) return alert("Date seems too far in the past. Please check.");
   save("lmp", lmpInput.value);
+
+  const usInput = document.getElementById("ultrasoundDate");
+  if (usInput.value) {
+    save("doctorDate", usInput.value);
+    save("doctorDateType", "edd");
+  }
+
   renderDashboard();
 }
 
@@ -686,6 +853,7 @@ function renderDashboard() {
   renderMilestones(week);
   renderWeightLog();
   renderAppointments();
+  renderDoctorTab();
   loadNotes();
 
   const wd = document.getElementById("weightDate");
@@ -850,6 +1018,120 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+function calcFromLmp(lmpDate) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const totalDays = Math.floor((today - lmpDate) / 86400000);
+  const week = Math.min(Math.floor(totalDays / 7), 42);
+  const day = totalDays % 7;
+  const dueDate = new Date(lmpDate);
+  dueDate.setDate(dueDate.getDate() + 280);
+  const daysLeft = Math.max(0, Math.ceil((dueDate - today) / 86400000));
+  const trimester = week <= 12 ? 1 : week <= 26 ? 2 : 3;
+  return { week, day, dueDate, daysLeft, trimester, totalDays };
+}
+
+function getDoctorLmp() {
+  const dateStr = load("doctorDate");
+  const dateType = load("doctorDateType") || "edd";
+  if (!dateStr) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if (dateType === "edd") {
+    const lmp = new Date(d);
+    lmp.setDate(lmp.getDate() - 280);
+    return lmp;
+  }
+  return d;
+}
+
+function saveDoctorDate() {
+  const dateEl = document.getElementById("doctorDateInput");
+  const typeEl = document.getElementById("doctorDateType");
+  if (!dateEl.value) return;
+  save("doctorDate", dateEl.value);
+  save("doctorDateType", typeEl.value);
+  document.getElementById("doctorDateSaved").textContent = "Saved!";
+  setTimeout(() => document.getElementById("doctorDateSaved").textContent = "", 2000);
+  renderDoctorTab();
+}
+
+function getTrimesterLabel(tri) {
+  return tri === 1 ? "1st" : tri === 2 ? "2nd" : "3rd";
+}
+
+function renderDoctorTab() {
+  const lmpStr = load("lmp");
+  if (!lmpStr) return;
+  const lmpDate = new Date(lmpStr + "T00:00:00");
+  const lmpCalc = calcFromLmp(lmpDate);
+
+  const docLmp = getDoctorLmp();
+  const emptyEl = document.getElementById("doctorEmpty");
+  const compareEl = document.getElementById("doctorCompareCard");
+  const diffEl = document.getElementById("doctorDiffCard");
+  const progressEl = document.getElementById("doctorProgressCard");
+
+  const savedDate = load("doctorDate");
+  const savedType = load("doctorDateType") || "edd";
+  if (savedDate) {
+    document.getElementById("doctorDateInput").value = savedDate;
+    document.getElementById("doctorDateType").value = savedType;
+  }
+
+  if (!docLmp) {
+    emptyEl.classList.remove("hidden");
+    compareEl.classList.add("hidden");
+    diffEl.classList.add("hidden");
+    progressEl.classList.add("hidden");
+    return;
+  }
+
+  emptyEl.classList.add("hidden");
+  compareEl.classList.remove("hidden");
+  diffEl.classList.remove("hidden");
+  progressEl.classList.remove("hidden");
+
+  const docCalc = calcFromLmp(docLmp);
+
+  document.getElementById("cmpLmpWeek").textContent = lmpCalc.week;
+  document.getElementById("cmpLmpDay").textContent = lmpCalc.day;
+  document.getElementById("cmpLmpDue").textContent = formatDateShort(lmpCalc.dueDate);
+  document.getElementById("cmpLmpLeft").textContent = lmpCalc.daysLeft;
+  document.getElementById("cmpLmpTri").textContent = getTrimesterLabel(lmpCalc.trimester);
+
+  document.getElementById("cmpDocWeek").textContent = docCalc.week;
+  document.getElementById("cmpDocDay").textContent = docCalc.day;
+  document.getElementById("cmpDocDue").textContent = formatDateShort(docCalc.dueDate);
+  document.getElementById("cmpDocLeft").textContent = docCalc.daysLeft;
+  document.getElementById("cmpDocTri").textContent = getTrimesterLabel(docCalc.trimester);
+
+  const daysDiff = Math.abs(Math.round((lmpCalc.dueDate - docCalc.dueDate) / 86400000));
+  const badge = document.getElementById("diffBadge");
+  const explanation = document.getElementById("diffExplanation");
+  if (daysDiff === 0) {
+    badge.textContent = "Dates match!";
+    badge.className = "diff-badge match";
+    explanation.textContent = "Your LMP and doctor's date agree on the due date.";
+  } else {
+    const earlier = docCalc.dueDate < lmpCalc.dueDate ? "earlier" : "later";
+    badge.textContent = daysDiff + " day" + (daysDiff > 1 ? "s" : "") + " difference";
+    badge.className = "diff-badge offset";
+    explanation.textContent = `Doctor's due date is ${daysDiff} day${daysDiff > 1 ? "s" : ""} ${earlier} than the LMP calculation. A difference of up to 7 days is common and normal.`;
+  }
+
+  document.getElementById("docCurrentWeek").textContent = docCalc.week;
+  document.getElementById("docCurrentDay").textContent = docCalc.day;
+  document.getElementById("docDueDate").textContent = formatDateShort(docCalc.dueDate);
+  document.getElementById("docDaysLeft").textContent = docCalc.daysLeft;
+
+  const docPct = Math.min((docCalc.totalDays / 280) * 100, 100);
+  document.getElementById("docProgressBar").style.width = docPct.toFixed(1) + "%";
+
+  document.getElementById("docTri1").classList.toggle("active", docCalc.week >= 1 && docCalc.week <= 12);
+  document.getElementById("docTri2").classList.toggle("active", docCalc.week >= 13 && docCalc.week <= 26);
+  document.getElementById("docTri3").classList.toggle("active", docCalc.week >= 27);
 }
 
 renderDashboard();
